@@ -10,18 +10,16 @@ import { ErrorCodeEnum } from "./enums/error-code.enum";
 
 import "./config/passport.config";
 import passport from "passport";
-import { asyncHandler } from "./middleware/asyncHandler.middleware";
-import { errorHandler } from "./middleware/errorHandler.middleware";
-
 import authRoutes from "./routes/auth.route";
 import userRoutes from "./routes/user.route";
+import isAuthenticated from "./middleware/isAuthenticated.middleware";
 import workspaceRoutes from "./routes/workspace.route";
 import memberRoutes from "./routes/member.route";
 import projectRoutes from "./routes/project.route";
 import taskRoutes from "./routes/task.route";
-import isAuthenticated from "./middleware/isAuthenticated.middleware";
+import { errorHandler } from "./middleware/errorHandler.middleware";
+import { asyncHandler } from "./middleware/asyncHandler.middleware";
 
-config;
 const app = express();
 const BASE_PATH = config.BASE_PATH;
 
@@ -53,25 +51,24 @@ app.use(
 app.get(
   `/`,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    // throw new BadRequestException(
-    //   "This is a bad request",
-    //   ErrorCodeEnum.AUTH_INVALID_TOKEN
-    // );
+    throw new BadRequestException(
+      "This is a bad request",
+      ErrorCodeEnum.AUTH_INVALID_TOKEN
+    );
     return res.status(httpStatus.OK).json({
-      message: "hello from the other world ",
+      message: "Hello from the authanticated world",
     });
   })
 );
 
 app.use(`${BASE_PATH}/auth`, authRoutes);
-// app.use(`${BASE_PATH}/user`, isAuthenticated, userRoutes);
-// app.use(`${BASE_PATH}/workspace`, isAuthenticated, workspaceRoutes);
-// app.use(`${BASE_PATH}/member`, isAuthenticated, memberRoutes);
-// app.use(`${BASE_PATH}/project`, isAuthenticated, projectRoutes);
-// app.use(`${BASE_PATH}/task`, isAuthenticated, taskRoutes);
+app.use(`${BASE_PATH}/user`, isAuthenticated, userRoutes);
+app.use(`${BASE_PATH}/workspace`, isAuthenticated, workspaceRoutes);
+app.use(`${BASE_PATH}/member`, isAuthenticated, memberRoutes);
+app.use(`${BASE_PATH}/project`, isAuthenticated, projectRoutes);
+app.use(`${BASE_PATH}/task`, isAuthenticated, taskRoutes);
 
 app.use(errorHandler);
-
 app.listen(config.PORT, async () => {
   console.log(`Server listening on port ${config.PORT} in ${config.NODE_ENV}`);
   await connectDatabase();
