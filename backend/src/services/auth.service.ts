@@ -12,6 +12,7 @@ import {
 import MemberModel from "../models/member.model";
 import { ProviderEnum } from "../enums/account-provider.enum";
 
+// Service to log in or create an account based on provider credentials
 export const loginOrCreateAccountService = async (data: {
   provider: string;
   displayName: string;
@@ -21,12 +22,14 @@ export const loginOrCreateAccountService = async (data: {
 }) => {
   const { providerId, provider, displayName, email, picture } = data;
 
+  // Start a MongoDB session for transactions
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
     console.log("Started Session...");
 
+    // Find user by email
     let user = await UserModel.findOne({ email }).session(session);
 
     if (!user) {
@@ -38,6 +41,7 @@ export const loginOrCreateAccountService = async (data: {
       });
       await user.save({ session });
 
+      // Create a new account linked to the user
       const account = new AccountModel({
         userId: user._id,
         provider: provider,
@@ -45,7 +49,7 @@ export const loginOrCreateAccountService = async (data: {
       });
       await account.save({ session });
 
-      // 3. Create a new workspace for the new user
+      // Create a new workspace for the new user
       const workspace = new WorkspaceModel({
         name: `My Workspace`,
         description: `Workspace created for ${user.name}`,
@@ -53,6 +57,7 @@ export const loginOrCreateAccountService = async (data: {
       });
       await workspace.save({ session });
 
+      // Find the owner role
       const ownerRole = await RoleModel.findOne({
         name: Roles.OWNER,
       }).session(session);
@@ -61,6 +66,7 @@ export const loginOrCreateAccountService = async (data: {
         throw new NotFoundException("Owner role not found");
       }
 
+      // Add user to workspace as owner
       const member = new MemberModel({
         userId: user._id,
         workspaceId: workspace._id,
@@ -69,9 +75,11 @@ export const loginOrCreateAccountService = async (data: {
       });
       await member.save({ session });
 
+      // Set the current workspace for the user
       user.currentWorkspace = workspace._id as mongoose.Types.ObjectId;
       await user.save({ session });
     }
+
     await session.commitTransaction();
     session.endSession();
     console.log("End Session...");
@@ -86,6 +94,7 @@ export const loginOrCreateAccountService = async (data: {
   }
 };
 
+// Service to register a new user with email, name, and password
 export const registerUserService = async (body: {
   email: string;
   name: string;
@@ -97,11 +106,13 @@ export const registerUserService = async (body: {
   try {
     session.startTransaction();
 
+    // Check if email already exists
     const existingUser = await UserModel.findOne({ email }).session(session);
     if (existingUser) {
       throw new BadRequestException("Email already exists");
     }
 
+    // Create a new user
     const user = new UserModel({
       email,
       name,
@@ -109,6 +120,7 @@ export const registerUserService = async (body: {
     });
     await user.save({ session });
 
+    // Create a new account linked to the user
     const account = new AccountModel({
       userId: user._id,
       provider: ProviderEnum.EMAIL,
@@ -116,7 +128,7 @@ export const registerUserService = async (body: {
     });
     await account.save({ session });
 
-    // 3. Create a new workspace for the new user
+    // Create a new workspace for the new user
     const workspace = new WorkspaceModel({
       name: `My Workspace`,
       description: `Workspace created for ${user.name}`,
@@ -124,6 +136,7 @@ export const registerUserService = async (body: {
     });
     await workspace.save({ session });
 
+    // Find the owner role
     const ownerRole = await RoleModel.findOne({
       name: Roles.OWNER,
     }).session(session);
@@ -132,6 +145,7 @@ export const registerUserService = async (body: {
       throw new NotFoundException("Owner role not found");
     }
 
+    // Add user to workspace as owner
     const member = new MemberModel({
       userId: user._id,
       workspaceId: workspace._id,
@@ -140,6 +154,7 @@ export const registerUserService = async (body: {
     });
     await member.save({ session });
 
+    // Set the current workspace for the user
     user.currentWorkspace = workspace._id as mongoose.Types.ObjectId;
     await user.save({ session });
 
@@ -159,6 +174,7 @@ export const registerUserService = async (body: {
   }
 };
 
+// Service to verify a user's email and password
 export const verifyUserService = async ({
   email,
   password,
@@ -179,10 +195,12 @@ export const verifyUserService = async ({
     throw new NotFoundException("User not found for the given account");
   }
 
+  // Check if password matches
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     throw new UnauthorizedException("Invalid email or password");
   }
 
+  // Return user data without the password
   return user.omitPassword();
 };
