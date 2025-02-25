@@ -1,9 +1,8 @@
 import { getEnv } from '../utils/get-env';
-
 const appConfig = () => ({
   NODE_ENV: getEnv('NODE_ENV', 'development'),
   PORT: getEnv('PORT', '9000'),
-  BASE_PATH: getEnv('BASE_PATH', '/api/v1'),
+  BASE_PATH: getEnv('BASE_PATH', ''),
   MONGO_URL: getEnv('MONGO_URL', 'mongodb://localhost:27017/project-management-app'),
   
   SESSION_SECRET: getEnv('SESSION_SECRET'),

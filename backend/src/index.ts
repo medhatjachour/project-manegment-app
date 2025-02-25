@@ -1,4 +1,6 @@
-import "dotenv/config";
+import dotenv from 'dotenv';
+dotenv.config(); // Load
+console.log('dotenv loaded:', process.env.NODE_ENV, process.env.PORT);
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import session from "cookie-session";
@@ -21,7 +23,9 @@ import { errorHandler } from "./middleware/errorHandler.middleware";
 import { asyncHandler } from "./middleware/asyncHandler.middleware";
 
 const app = express();
+
 const BASE_PATH = config.BASE_PATH;
+console.log(BASE_PATH);
 
 app.use(express.json());
 
@@ -52,7 +56,7 @@ app.get(
   `/`,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     throw new BadRequestException(
-      "This is a bad request",
+      "This sd asd is a bad request",
       ErrorCodeEnum.AUTH_INVALID_TOKEN
     );
     return res.status(httpStatus.OK).json({
@@ -60,8 +64,10 @@ app.get(
     });
   })
 );
+console.log('BASE_PATH:', BASE_PATH);
 
 app.use(`${BASE_PATH}/auth`, authRoutes);
+
 app.use(`${BASE_PATH}/user`, isAuthenticated, userRoutes);
 app.use(`${BASE_PATH}/workspace`, isAuthenticated, workspaceRoutes);
 app.use(`${BASE_PATH}/member`, isAuthenticated, memberRoutes);
